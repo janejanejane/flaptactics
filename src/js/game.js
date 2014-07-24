@@ -3,6 +3,9 @@
 
   function Game() {
     this.accel = 0;
+    this.achievementsBoard = null;
+    this.achievementsBtn = null;
+    this.back = null;
     this.counter = 0;
     this.force = 0;
     this.gravity = 0.6;
@@ -133,14 +136,6 @@
       //   this.game.debug.spriteBounds(rect);
       // }, this);
     },
-
-    // onInputUp: function(){
-    //   // Add a vertical velocity to the bird
-    //   if(!this.killed){
-    //     console.log(this.killed);
-    //     this.player.body.velocity.y = -350;
-    //   }
-    // },
 
     onVelocity: function(obj){
       obj.body.velocity.x = -200;
@@ -424,18 +419,7 @@
       // this.pipesDown.setAll('body.velocity.x', 0, true);
       // this.rectangles.setAll('body.velocity.x', 0, true);
 
-      this.killButtons();
-      this.scoreboard = this.game.add.sprite(this.game.width / 3, this.game.height / 6, 'scoreboard');
-
-      this.score = this.game.add.group();
-      this.displayScore();
-      this.highScore = this.game.add.group();
-      this.displayHighScore();
-      this.displayMedal();
-      this.replay = this.game.add.sprite(this.game.width / 1.9, this.game.height - 200, 'replay');
-      this.replay.inputEnabled = true;
-      this.replay.events.onInputDown.add(this.restart, this);
-
+      this.gameOverScreen();
       console.log('killed');
     },
 
@@ -507,6 +491,71 @@
           this.medal = this.game.add.sprite(x, y, 'bronze');
           break;
       }
+    },
+
+    achievementInfo: function(){
+      var result = [];
+      switch(this.subtotal){
+        case 3:
+          result.push('Cross 3 pipes!');
+        case 10:
+          result.push('Cross 10 pipes!');
+        case 20:
+          result.push('Cross 20 pipes!');
+        default:
+          break;
+      }
+
+      console.log(result);
+      this.removeGameOver();
+      this.achievementsBoard = this.game.add.sprite(this.game.width / 3.5, 50, 'achievements');
+      var resultText = this.add.bitmapText(100, 200, 'minecraftia', result, 13);
+      resultText.tint = 0xFF0000;
+      this.achievementsBoard.addChild(resultText);
+
+      this.replay.x = this.game.width / 1.8;
+      this.replay.y = this.game.height - 80;
+
+      this.back = this.game.add.sprite(this.replay.x - 163, this.replay.y, 'backScore');
+      this.back.inputEnabled = true;
+      this.back.events.onInputDown.add(this.gameOverScreen, this);
+    },
+
+    removeGameOver: function(){
+      this.score.removeAll(true);
+      this.highScore.removeAll(true);
+      this.scoreboard.kill();
+      this.medal.kill();
+      this.achievementsBtn.kill();
+    },
+
+    removeAchievementsBoard: function(){
+      if(this.achievementsBoard){
+        this.achievementsBoard.kill();
+        this.back.kill();
+        this.replay.kill();
+      }
+    },
+
+    gameOverScreen: function(){
+      this.killButtons();
+      this.removeAchievementsBoard();
+      this.scoreboard = this.game.add.sprite(this.game.width / 3, this.game.height / 6, 'scoreboard');
+
+      // achievement button
+      this.achievementsBtn =
+      this.achievementsBtn = this.game.add.sprite(this.game.width / 3, this.game.height - 200, 'rank');
+      this.achievementsBtn.inputEnabled = true;
+      this.achievementsBtn.events.onInputDown.add(this.achievementInfo, this);
+
+      this.score = this.game.add.group();
+      this.displayScore();
+      this.highScore = this.game.add.group();
+      this.displayHighScore();
+      this.displayMedal();
+      this.replay = this.game.add.sprite(this.game.width / 1.9, this.game.height - 200, 'replay');
+      this.replay.inputEnabled = true;
+      this.replay.events.onInputDown.add(this.restart, this);
     }
   };
 
