@@ -15,6 +15,7 @@
       this.load.onLoadComplete.addOnce(this.onLoadComplete, this);
       this.load.setPreloadSprite(this.asset);
       this.load.spritesheet('player', 'assets/bird.png', 34, 96/4, 4);
+      this.load.image('chat', 'assets/chat.png');
       this.load.image('pipe', 'assets/pipe.png');
       this.load.image('pipeup', 'assets/pipe-down.png');
       this.load.image('pipedown', 'assets/pipe-up.png');

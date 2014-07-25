@@ -1,11 +1,16 @@
 (function() {
   'use strict';
 
+  var GAME_WIDTH = 0,
+      GAME_HEIGHT = 0;
+
   function Game() {
     this.accel = 0;
     this.achievementsBoard = null;
     this.achievementsBtn = null;
     this.back = null;
+    this.blurt = null;
+    this.bubble = null;
     this.counter = 0;
     this.force = 0;
     this.gravity = 0.6;
@@ -31,14 +36,15 @@
     this.score = null;
     this.scoreboard = null;
     this.storedVelocity = 0;
+    this.thoughts = ['Whoah', 'Oooh', 'Wow', 'Yeey'];
     this.wing = null;
   }
 
   Game.prototype = {
 
     create: function () {
-      var x = this.game.width / 2
-        , y = this.game.height / 2;
+      GAME_WIDTH = this.game.width;
+      GAME_HEIGHT = this.game.height;
 
       this.subtotal = 0;
       this.game.stage.backgroundColor = '#4EC0CA';
@@ -72,7 +78,7 @@
       this.rectangles.createMultiple(5, bmd);
 
       // player
-      this.player = this.game.add.sprite(x, y, 'player');
+      this.player = this.game.add.sprite(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'player');
       this.player.animations.add('walk', [0,1,2], 6, true);
       this.player.animations.add('idle', [0,1,2], 3, true);
       this.player.animations.play('walk', 50, true);
@@ -83,6 +89,14 @@
       this.player.body.allowRotation = true;
       this.player.checkWorldBounds = true;
       this.player.outOfBoundsKill = true;
+
+      // thought bubble
+      this.blurt = this.add.bitmapText(35, 45, 'minecraftia', '', 14);
+      this.blurt.tint = 0x666666;
+      this.blurt.angle = -20;
+      this.bubble = this.game.add.sprite(1, 1, 'chat');
+      this.bubble.addChild(this.blurt);
+      this.game.physics.arcade.enable(this.bubble);
 
       this.displayButtons();
 
@@ -146,7 +160,7 @@
     },
 
     displayButtons: function(){
-      var btnY = this.game.height - 50,
+      var btnY = GAME_HEIGHT - 50,
           btnWidth = 100,
           btnTextTint = 0x666666,
           btnTextSize = 12,
@@ -158,21 +172,21 @@
           pass = null;
 
       // jump buttons
-      this.loJumpBtn = this.game.add.button(this.game.width - 600, btnY, 'button', this.jumpAction('lo'), this);
+      this.loJumpBtn = this.game.add.button(GAME_WIDTH - 600, btnY, 'button', this.jumpAction('lo'), this);
       this.loJumpBtn.inputEnabled = true;
       this.loJumpBtn.width = btnWidth;
       loJump = this.add.bitmapText(btnTextX, btnTextY, 'minecraftia', 'lo-jump', btnTextSize);
       loJump.tint = btnTextTint;
       this.loJumpBtn.addChild(loJump);
 
-      this.midJumpBtn = this.game.add.button(this.game.width - 450, btnY, 'button', this.jumpAction('mid'), this);
+      this.midJumpBtn = this.game.add.button(GAME_WIDTH - 450, btnY, 'button', this.jumpAction('mid'), this);
       this.midJumpBtn.inputEnabled = true;
       this.midJumpBtn.width = btnWidth;
       midJump = this.add.bitmapText(btnTextX - 5, btnTextY, 'minecraftia', 'mid-jump', btnTextSize);
       midJump.tint = btnTextTint;
       this.midJumpBtn.addChild(midJump);
 
-      this.hiJumpBtn = this.game.add.button(this.game.width - 300, btnY, 'button', this.jumpAction('hi'), this);
+      this.hiJumpBtn = this.game.add.button(GAME_WIDTH - 300, btnY, 'button', this.jumpAction('hi'), this);
       this.hiJumpBtn.inputEnabled = true;
       this.hiJumpBtn.width = btnWidth;
       hiJump = this.add.bitmapText(btnTextX, btnTextY, 'minecraftia', 'hi-jump', btnTextSize);
@@ -180,7 +194,7 @@
       this.hiJumpBtn.addChild(hiJump);
 
       // pass button
-      this.passBtn = this.game.add.button(this.game.width - 150, btnY, 'button', this.passAction, this);
+      this.passBtn = this.game.add.button(GAME_WIDTH - 150, btnY, 'button', this.passAction, this);
       this.passBtn.inputEnabled = true;
       this.passBtn.width = btnWidth;
       pass = this.add.bitmapText(btnTextX + 10, btnTextY, 'minecraftia', 'pass', btnTextSize);
@@ -190,6 +204,7 @@
 
     pauseGame: function(){
       this.storedVelocity = this.player.body.velocity.y;
+      this.bubble.kill();
       this.player.animations.play('idle');
       this.player.body.gravity.y = 0;
       this.player.body.velocity.y = 0;
@@ -220,6 +235,13 @@
     unpauseGame: function(){
       // console.log('gravity:', this.player.body.gravity.y, 'velocity', this.player.body.velocity.y, this.player.body.y);
       this.wing = this.game.sound.play('wing', 1, true);
+      this.bubble.revive();
+      this.bubble.x = this.player.x - 60;
+      this.bubble.y = this.player.y - 120;
+      this.bubble.body.gravity.y = this.player.body.gravity.y;
+      this.bubble.body.velocity.y = this.player.body.velocity.y;
+      this.blurt.text = this.thoughts[Math.floor(Math.random()*4)];
+
       this.isPaused = false;
       this.player.animations.play('walk', 50, true);
       this.player.animations.paused = false;
@@ -278,15 +300,15 @@
 
     moveSky: function(){
       this.sky.forEach(function(cloud ){
-        cloud.reset(0, this.game.height / 3);
+        cloud.reset(0, GAME_HEIGHT / 3);
         var i = this.sky.getIndex(cloud);
         if(i > 0){
-          cloud.reset(this.game.width, this.game.height / 3);
+          cloud.reset(GAME_WIDTH, GAME_HEIGHT / 3);
         }
 
         this.game.physics.arcade.enable(cloud);
-        cloud.height = this.game.height - 250;
-        cloud.width = this.game.width;
+        cloud.height = GAME_HEIGHT - 250;
+        cloud.width = GAME_WIDTH;
         cloud.body.velocity.x = -100;
         cloud.checkWorldBounds = true;
 
@@ -305,13 +327,13 @@
 
     moveLand: function(){
       this.land.forEach(function(lot){
-        lot.reset(0, this.game.height - 100);
+        lot.reset(0, GAME_HEIGHT - 100);
         if(this.land.getIndex(lot) > 0){
-          lot.reset(this.game.width, this.game.height - 100);
+          lot.reset(GAME_WIDTH, GAME_HEIGHT - 100);
         }
 
         this.game.physics.arcade.enable(lot);
-        lot.width = this.game.width;
+        lot.width = GAME_WIDTH;
         lot.body.velocity.x = -150;
         lot.body.immovable = true;
         lot.checkWorldBounds = true;
@@ -383,7 +405,7 @@
       var hole = Math.floor(Math.random()*4)+1;
 
       for (var i = 0; i < 8; i++){
-        var x = this.game.width - 60,
+        var x = GAME_WIDTH - 60,
             y = i*60;
 
         if(i === hole+1){
@@ -443,7 +465,7 @@
       for(var i = splits.length - 1; i > -1; i--){
         divideX = divideX + 0.05;
         // console.log(divideX, divideY, splits[i]);
-        this.score.create(this.game.width / divideX, this.game.height / divideY, splits[i]);
+        this.score.create(GAME_WIDTH / divideX, GAME_HEIGHT / divideY, splits[i]);
       }
 
       this.game.sound.play('die');
@@ -455,7 +477,7 @@
       if(parseInt(best) < this.subtotal){
         localStorage.setItem('highScore', this.subtotal.toString());
         best = this.subtotal.toString();
-        this.newBest = this.add.bitmapText(this.game.width / 1.8, this.game.height / 2.35, 'minecraftia', 'new', 13);
+        this.newBest = this.add.bitmapText(GAME_WIDTH / 1.8, GAME_HEIGHT / 2.35, 'minecraftia', 'new', 13);
         this.newBest.tint =  0xFF0000;
       }
 
@@ -466,13 +488,13 @@
       // console.log('after if', best, typeof(best), splits);
       for(var i = splits.length - 1; i > -1; i--){
         divideX = divideX + 0.05;
-        this.highScore.create(this.game.width / divideX, this.game.height / divideY, best[i]);
+        this.highScore.create(GAME_WIDTH / divideX, GAME_HEIGHT / divideY, best[i]);
       }
     },
 
     displayMedal: function(){
-      var x = this.game.width / 2.6,
-          y = this.game.height / 2.5;
+      var x = GAME_WIDTH / 2.6,
+          y = GAME_HEIGHT / 2.5;
 
       switch(true){
         case this.subtotal < 50:
@@ -493,12 +515,20 @@
       }
     },
 
+    displayDetails: function(){
+      this.score = this.game.add.group();
+      this.displayScore();
+      this.highScore = this.game.add.group();
+      this.displayHighScore();
+      this.displayMedal();
+    },
+
     achievementInfo: function(){
       this.removeGameOver();
-      this.achievementsBoard = this.game.add.sprite(this.game.width / 3.5, 50, 'achievements');
+      this.achievementsBoard = this.game.add.sprite(GAME_WIDTH / 3.5, 50, 'achievements');
 
-      this.replay.x = this.game.width / 1.8;
-      this.replay.y = this.game.height - 80;
+      this.replay.x = GAME_WIDTH / 1.8;
+      this.replay.y = GAME_HEIGHT - 80;
 
       this.back = this.game.add.sprite(this.replay.x - 163, this.replay.y, 'backScore');
       this.back.inputEnabled = true;
@@ -523,24 +553,25 @@
 
     backToScoreBoard: function(){
       this.removeAchievementsBoard();
-      this.gameOverScreen();
+      this.scoreboard.revive();
+      this.medal.revive();
+      this.achievementsBtn.revive();
+      this.displayDetails();
+      this.replay.revive();
+      this.replay.x = GAME_WIDTH / 1.9;
+      this.replay.y = GAME_HEIGHT - 200;
     },
 
     gameOverScreen: function(){
       this.killButtons();
-      this.scoreboard = this.game.add.sprite(this.game.width / 3, this.game.height / 6, 'scoreboard');
+      this.scoreboard = this.game.add.sprite(GAME_WIDTH / 3, GAME_HEIGHT / 6, 'scoreboard');
 
       // achievement button
-      this.achievementsBtn = this.game.add.sprite(this.game.width / 3, this.game.height - 200, 'rank');
+      this.achievementsBtn = this.game.add.sprite(GAME_WIDTH / 3, GAME_HEIGHT - 200, 'rank');
       this.achievementsBtn.inputEnabled = true;
       this.achievementsBtn.events.onInputDown.add(this.achievementInfo, this);
-
-      this.score = this.game.add.group();
-      this.displayScore();
-      this.highScore = this.game.add.group();
-      this.displayHighScore();
-      this.displayMedal();
-      this.replay = this.game.add.sprite(this.game.width / 1.9, this.game.height - 200, 'replay');
+      this.displayDetails();
+      this.replay = this.game.add.sprite(GAME_WIDTH / 1.9, GAME_HEIGHT - 200, 'replay');
       this.replay.inputEnabled = true;
       this.replay.events.onInputDown.add(this.restart, this);
     }
